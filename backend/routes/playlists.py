@@ -2,11 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from models.user import User
 from utils.auth import get_current_user
-from models.vote import Vote
-from database import db_dependency
-from models.playlist import Playlist
-from models.song import Song
-from sqlalchemy import func
+from services.playlist import playlist_service_dependency
 
 router = APIRouter()
 
@@ -34,46 +30,17 @@ class PlaylistCreate(BaseModel):
     name: str
 
 @router.get("/playlists")
-async def get_playlists(db: db_dependency, _: User = Depends(get_current_user)):
-    playlists = db.query(Playlist).all()
-    return playlists
+async def get_playlists(playlist_service: playlist_service_dependency, _: User = Depends(get_current_user)):
+    return playlist_service.get_all_playlists()
 
 @router.post("/playlists")
-async def create_playlist(playlist: PlaylistCreate, db: db_dependency, _: User = Depends(get_current_user)):
-    db_playlist = Playlist(name=playlist.name)
-    db.add(db_playlist)
-    db.commit()
-    db.refresh(db_playlist)
-    return db_playlist
+async def create_playlist(playlist: PlaylistCreate, playlist_service: playlist_service_dependency, _: User = Depends(get_current_user)):
+    return playlist_service.create_playlist(playlist.name)
 
 @router.get("/playlists/{playlist_id}", response_model=PlaylistResponse)
-async def get_playlist(playlist_id: int, db: db_dependency, _: User = Depends(get_current_user)):
-    playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
-    if playlist:
-        songs = db.query(Song).filter(Song.playlist_id == playlist_id).all()
-        
-        # Add votes count to each song
-        songs_with_votes = []
-        for song in songs:
-            vote_count = db.query(func.count(Vote.id)).filter(Vote.song_id == song.id).scalar()
-            song_dict = {
-                "id": song.id,
-                "title": song.title,
-                "genre": song.genre,
-                "author": song.author,
-                "created_at": song.created_at,
-                "playlist_id": song.playlist_id,
-                "votes": vote_count or 0
-            }
-            songs_with_votes.append(song_dict)
-        
-        return {"id": playlist.id, "name": playlist.name, "songs": songs_with_votes}
-    return None
+async def get_playlist(playlist_id: int, playlist_service: playlist_service_dependency, _: User = Depends(get_current_user)):
+    return playlist_service.get_playlist_by_id(playlist_id)
 
 @router.post("/playlists/vote")
-async def vote(song_id: int, db: db_dependency, user: User = Depends(get_current_user)):
-    vote = Vote(song_id=song_id, user_id=user.id)
-    db.add(vote)
-    db.commit()
-    db.refresh(vote)
-    return vote
+async def vote(song_id: int, playlist_service: playlist_service_dependency, user: User = Depends(get_current_user)):
+    return playlist_service.vote_song(song_id, user.id)
