@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from database import db_dependency
 from models.playlist import Playlist
 from models.song import Song
@@ -24,16 +24,24 @@ class PlaylistService:
         self.db.commit()
         self.db.refresh(db_playlist)
         return db_playlist
+    
+    def delete_playlist(self, playlist_id: int):
+        """Delete a playlist"""
+        playlist = self.db.query(Playlist).filter(Playlist.id == playlist_id).first()
+        if not playlist:
+            raise HTTPException(status_code=404, detail="Playlist not found")
+        self.db.delete(playlist)
+        self.db.commit()
+        return playlist
 
     def get_playlist_by_id(self, playlist_id: int):
         """Get a playlist by ID with songs and their vote counts"""
         playlist = self.db.query(Playlist).filter(Playlist.id == playlist_id).first()
         if not playlist:
-            return None
+            raise HTTPException(status_code=404, detail="Top playlist not found")
         
         songs = self.db.query(Song).filter(Song.playlist_id == playlist_id).all()
         
-        # Add votes count to each song
         songs_with_votes = []
         for song in songs:
             vote_count = self.db.query(func.count(Vote.id)).filter(Vote.song_id == song.id).scalar()
@@ -56,6 +64,14 @@ class PlaylistService:
         self.db.add(vote)
         self.db.commit()
         self.db.refresh(vote)
+        return vote
+    
+    def unvote_song(self, song_id: int, user_id: Column[int]):
+        vote = self.db.query(Vote).filter(Vote.song_id == song_id, Vote.user_id == user_id).first()
+        if not vote:
+            raise HTTPException(status_code=404, detail="Vote not found")
+        self.db.delete(vote)
+        self.db.commit()
         return vote
 
 playlist_service_dependency = Annotated[PlaylistService, Depends(get_playlist_service)]

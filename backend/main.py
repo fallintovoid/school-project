@@ -1,23 +1,25 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import auth
 from database import engine
 from dotenv import load_dotenv
 
-from routes import playlists, songs
+from routes import playlists, songs, top_playlists, auth
 
 import models.playlist
 import models.song
 import models.user
 import models.vote
+import models.top_playlist
 
 load_dotenv()
 
 app = FastAPI(title="School Project API")
+
 models.user.Base.metadata.create_all(bind=engine)
 models.song.Base.metadata.create_all(bind=engine)
 models.playlist.Base.metadata.create_all(bind=engine)
 models.vote.Base.metadata.create_all(bind=engine)
+models.top_playlist.Base.metadata.create_all(bind=engine)
 
 # Configure CORS
 app.add_middleware(
@@ -30,6 +32,7 @@ app.add_middleware(
 app.include_router(playlists.router)
 app.include_router(songs.router)
 app.include_router(auth.router)
+app.include_router(top_playlists.router)
 
 @app.get("/")
 async def root():

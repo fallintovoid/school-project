@@ -10,4 +10,5 @@ class Song(Base):
     genre = Column(String, index=True)
     author = Column(String, index=True)
     created_at = Column(Integer, default=lambda: int(time()))
-    playlist_id = Column(Integer,ForeignKey("playlists.id"))
+    playlist_id = Column(Integer, ForeignKey("playlists.id", ondelete="CASCADE"))
+    top_playlist_id = Column(Integer, ForeignKey("top_playlists.id", ondelete="SET NULL"), nullable=True)
