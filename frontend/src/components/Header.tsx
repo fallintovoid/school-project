@@ -1,12 +1,10 @@
 import { Music, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 
-interface HeaderProps {
-  username: string;
-  onLogout: () => void;
-}
+export function Header() {
+  const { user, logout, isLoading } = useAuth();
 
-export function Header({ username, onLogout }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 glass">
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
@@ -20,9 +18,15 @@ export function Header({ username, onLogout }: HeaderProps) {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50 border border-border/50">
             <User className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{username}</span>
+            <span className="text-sm font-medium">{user?.username || "Guest"}</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onLogout} className="text-muted-foreground hover:text-destructive">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={logout}
+            disabled={isLoading}
+            className="text-muted-foreground hover:text-destructive"
+          >
             <LogOut className="w-4 h-4" />
           </Button>
         </div>

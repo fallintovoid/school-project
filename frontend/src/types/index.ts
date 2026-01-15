@@ -1,32 +1,22 @@
-export interface Song {
-  id: string;
-  title: string;
-  artist: string;
-  votes: number;
-  hasVoted: boolean;
-  duration?: string;
-  albumArt?: string;
+export interface User {
+  id?: string | number;
+  username: string;
+  [k: string]: any;
 }
 
 export interface Playlist {
-  id: string;
+  id: string | number;
   name: string;
-  description?: string;
-  songCount: number;
-  coverImage?: string;
-  createdAt: string;
+  songsCount?: number;
+  [k: string]: any;
 }
 
-export interface TopPlaylist {
-  id: string;
-  name: string;
-  sourcePlaylistId: string;
-  sourcePlaylistName: string;
-  songCount: number;
-  createdAt: string;
-}
-
-export interface User {
-  id: string;
-  username: string;
+export interface Song {
+  id: string | number;
+  band: string;
+  title: string;
+  genre: string;
+  votes: number;
+  userVoted?: boolean;
+  [k: string]: any;
 }

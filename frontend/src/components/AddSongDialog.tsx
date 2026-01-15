@@ -12,23 +12,42 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/sonner";
+import { songsApi } from "@/lib/apiClient";
 
 interface AddSongDialogProps {
-  onAddSong: (song: { title: string; artist: string }) => void;
+  playlistId: string | number;
+  onSongAdded: () => void | Promise<void>;
 }
 
-export function AddSongDialog({ onAddSong }: AddSongDialogProps) {
+export function AddSongDialog({ playlistId, onSongAdded }: AddSongDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
+  const [band, setBand] = useState("");
+  const [genre, setGenre] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (title.trim() && artist.trim()) {
-      onAddSong({ title: title.trim(), artist: artist.trim() });
+    if (!title.trim() || !band.trim() || !genre.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await songsApi.add({
+        title: title.trim(),
+        band: band.trim(),
+        genre: genre.trim(),
+        playlistId,
+      });
+      toast.success("Song added");
       setTitle("");
-      setArtist("");
+      setBand("");
+      setGenre("");
       setOpen(false);
+      await onSongAdded();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to add song");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -63,12 +82,22 @@ export function AddSongDialog({ onAddSong }: AddSongDialogProps) {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="artist">Artist</Label>
+              <Label htmlFor="band">Band</Label>
               <Input
-                id="artist"
-                placeholder="Enter artist name..."
-                value={artist}
-                onChange={(e) => setArtist(e.target.value)}
+                id="band"
+                placeholder="Enter band name..."
+                value={band}
+                onChange={(e) => setBand(e.target.value)}
+                className="bg-secondary/50 border-border focus:border-primary"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="genre">Genre</Label>
+              <Input
+                id="genre"
+                placeholder="Enter genre..."
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
                 className="bg-secondary/50 border-border focus:border-primary"
               />
             </div>
@@ -77,7 +106,11 @@ export function AddSongDialog({ onAddSong }: AddSongDialogProps) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="glow" disabled={!title.trim() || !artist.trim()}>
+            <Button
+              type="submit"
+              variant="glow"
+              disabled={!title.trim() || !band.trim() || !genre.trim() || isSubmitting}
+            >
               Add Song
             </Button>
           </DialogFooter>

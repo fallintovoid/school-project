@@ -1,22 +1,50 @@
-import { ThumbsUp, Music2 } from "lucide-react";
+import { ThumbsUp, Music2, Trash2 } from "lucide-react";
 import { Song } from "@/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { toast } from "@/components/ui/sonner";
+import { songsApi, votesApi } from "@/lib/apiClient";
 
 interface SongCardProps {
   song: Song;
   index: number;
-  onVote: (songId: string) => void;
+  onRefresh: () => void | Promise<void>;
 }
 
-export function SongCard({ song, index, onVote }: SongCardProps) {
+export function SongCard({ song, index, onRefresh }: SongCardProps) {
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleVote = () => {
+  const handleVote = async () => {
     setIsAnimating(true);
-    onVote(song.id);
-    setTimeout(() => setIsAnimating(false), 300);
+    setIsSubmitting(true);
+    try {
+      if (song.userVoted) {
+        await votesApi.unvote(song.id);
+      } else {
+        await votesApi.vote(song.id);
+      }
+      await onRefresh();
+    } catch (error: any) {
+      toast.error(error?.message || "Vote failed");
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setIsAnimating(false), 300);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsSubmitting(true);
+    try {
+      await songsApi.remove(song.id);
+      toast.success("Song deleted");
+      await onRefresh();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to delete song");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -41,20 +69,14 @@ export function SongCard({ song, index, onVote }: SongCardProps) {
           {song.title}
         </h4>
         <p className="text-sm text-muted-foreground truncate">
-          {song.artist}
+          {song.band}
         </p>
       </div>
-
-      {song.duration && (
-        <span className="text-sm text-muted-foreground hidden sm:block">
-          {song.duration}
-        </span>
-      )}
 
       <div className="flex items-center gap-3">
         <span className={cn(
           "text-sm font-semibold min-w-[2rem] text-center transition-all duration-200",
-          song.hasVoted ? "text-vote-active" : "text-muted-foreground"
+          song.userVoted ? "text-vote-active" : "text-muted-foreground"
         )}>
           {song.votes}
         </span>
@@ -62,8 +84,9 @@ export function SongCard({ song, index, onVote }: SongCardProps) {
         <Button
           variant="vote"
           size="icon"
-          data-voted={song.hasVoted}
+          data-voted={song.userVoted}
           onClick={handleVote}
+          disabled={isSubmitting}
           className={cn(
             "relative",
             isAnimating && "animate-vote-pop"
@@ -71,8 +94,18 @@ export function SongCard({ song, index, onVote }: SongCardProps) {
         >
           <ThumbsUp className={cn(
             "w-4 h-4 transition-transform duration-200",
-            song.hasVoted && "fill-current"
+            song.userVoted && "fill-current"
           )} />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleDelete}
+          disabled={isSubmitting}
+          className="text-muted-foreground hover:text-destructive"
+        >
+          <Trash2 className="w-4 h-4" />
         </Button>
       </div>
     </div>

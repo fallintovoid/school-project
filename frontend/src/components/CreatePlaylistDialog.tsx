@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { Sparkles, ListMusic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,41 +12,55 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/sonner";
+import { playlistsApi } from "@/lib/apiClient";
 
 interface CreatePlaylistDialogProps {
-  onCreatePlaylist: (name: string) => void;
-  topSongsCount: number;
+  onCreated: () => void | Promise<void>;
+  trigger?: ReactNode;
 }
 
-export function CreatePlaylistDialog({ onCreatePlaylist, topSongsCount }: CreatePlaylistDialogProps) {
+export function CreatePlaylistDialog({ onCreated, trigger }: CreatePlaylistDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      onCreatePlaylist(name.trim());
-      setName("");
-      setOpen(false);
+      setIsSubmitting(true);
+      try {
+        await playlistsApi.create(name.trim());
+        toast.success("Playlist created");
+        setName("");
+        setOpen(false);
+        await onCreated();
+      } catch (error: any) {
+        toast.error(error?.message || "Failed to create playlist");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 border-primary/30 hover:border-primary hover:bg-primary/10">
-          <Sparkles className="w-4 h-4 text-primary" />
-          Create Top Playlist
-        </Button>
+        {trigger ?? (
+          <Button variant="outline" className="gap-2 border-primary/30 hover:border-primary hover:bg-primary/10">
+            <Sparkles className="w-4 h-4 text-primary" />
+            Create Playlist
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="glass border-border/50">
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
             <ListMusic className="w-5 h-5 text-primary" />
-            Create Top Voted Playlist
+            Create New Playlist
           </DialogTitle>
           <DialogDescription>
-            Create a new playlist with the {topSongsCount} most voted songs from the current selection.
+            Give your new playlist a name to get started.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -66,7 +80,7 @@ export function CreatePlaylistDialog({ onCreatePlaylist, topSongsCount }: Create
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="glow" disabled={!name.trim()}>
+            <Button type="submit" variant="glow" disabled={!name.trim() || isSubmitting}>
               <Sparkles className="w-4 h-4" />
               Create Playlist
             </Button>

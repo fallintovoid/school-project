@@ -45,7 +45,7 @@ export function PlaylistCard({ playlist, isSelected, onClick }: PlaylistCardProp
             {playlist.name}
           </h3>
           <p className="text-sm text-muted-foreground">
-            {playlist.songCount} {playlist.songCount === 1 ? 'song' : 'songs'}
+            {playlist.songsCount ?? 0} {playlist.songsCount === 1 ? "song" : "songs"}
           </p>
         </div>
         

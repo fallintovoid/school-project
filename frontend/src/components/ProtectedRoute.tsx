@@ -1,9 +1,9 @@
+import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { AuthForm } from "@/components/AuthForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 
-export function AuthPage() {
+export function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -14,9 +14,9 @@ export function AuthPage() {
     );
   }
 
-  if (isAuthenticated) {
-    return <Navigate to="/playlists" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
   }
 
-  return <AuthForm />;
+  return <>{children}</>;
 }

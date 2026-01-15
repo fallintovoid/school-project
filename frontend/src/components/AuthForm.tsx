@@ -4,30 +4,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/lib/auth";
 
-interface AuthFormProps {
-  onLogin: (username: string, password: string) => void;
-  onRegister: (username: string, password: string) => void;
-}
-
-export function AuthForm({ onLogin, onRegister }: AuthFormProps) {
+export function AuthForm() {
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [registerUsername, setRegisterUsername] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const { login, register, isLoading } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loginUsername.trim() && loginPassword.trim()) {
-      onLogin(loginUsername.trim(), loginPassword.trim());
+      try {
+        await login(loginUsername.trim(), loginPassword.trim());
+      } catch {
+        // errors are handled in auth context
+      }
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (registerUsername.trim() && registerPassword.trim() && registerPassword === confirmPassword) {
-      onRegister(registerUsername.trim(), registerPassword.trim());
+      try {
+        await register(registerUsername.trim(), registerPassword.trim());
+      } catch {
+        // errors are handled in auth context
+      }
     }
   };
 
@@ -94,7 +99,7 @@ export function AuthForm({ onLogin, onRegister }: AuthFormProps) {
                   type="submit" 
                   variant="glow" 
                   className="w-full mt-6"
-                  disabled={!loginUsername.trim() || !loginPassword.trim()}
+                  disabled={!loginUsername.trim() || !loginPassword.trim() || isLoading}
                 >
                   <LogIn className="w-4 h-4" />
                   Sign In
@@ -152,7 +157,12 @@ export function AuthForm({ onLogin, onRegister }: AuthFormProps) {
                   type="submit" 
                   variant="glow" 
                   className="w-full mt-6"
-                  disabled={!registerUsername.trim() || !registerPassword.trim() || registerPassword !== confirmPassword}
+                  disabled={
+                    !registerUsername.trim() ||
+                    !registerPassword.trim() ||
+                    registerPassword !== confirmPassword ||
+                    isLoading
+                  }
                 >
                   <UserPlus className="w-4 h-4" />
                   Create Account
