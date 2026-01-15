@@ -33,5 +33,15 @@ services:
       - .:/app
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
+  adminer:
+    image: adminer
+    container_name: school-project-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+
 volumes:
   postgres_data:
